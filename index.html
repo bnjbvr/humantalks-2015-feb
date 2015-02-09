@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Title</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+    <style type="text/css">
+      @import url(https://fonts.googleapis.com/css?family=Yanone+Kaffeesatz);
+      @import url(https://fonts.googleapis.com/css?family=Droid+Serif:400,700,400italic);
+      @import url(https://fonts.googleapis.com/css?family=Ubuntu+Mono:400,700,400italic);
+
+      body { font-family: 'Droid Serif'; }
+      h1, h2, h3 {
+        font-family: 'Yanone Kaffeesatz';
+        font-weight: normal;
+      }
+      .remark-code, .remark-inline-code { font-family: 'Ubuntu Mono'; }
+      .awfy img { height: 26em; }
+      .italic { font-style: italic; }
+      .link a { text-decoration: none }
+    </style>
+  </head>
+  <body>
+    <textarea id="source">
+
+class: center, middle
+
+# Les micro-benchmarks
+
+## ou comment ne rien tester
+
+---
+
+class: center, middle
+
+.awfy[![Centered image](img/awfy.png)]
+
+???
+
+- expliquer ce qu'est un benchmark
+- benchmarks en JS
+
+---
+
+class: center, middle
+
+![Centered image](img/firefox.png)
+
+???
+
+- qui je suis (pour qui je travaille)
+- mes opinions sont personnelles
+
+---
+
+class: center, middle
+
+# Comment faire un bon benchmark de JS
+
+---
+
+class: middle
+
+```javascript
+    function f() {
+        var before = Date.now();
+        for (var i = 0; i < 1000000; i++) {
+            var x = document.getElementById("myLittlePony"),
+                y = document.getElementById("myLittleCheval"),
+                z = document.getElementById("myLittleUnicorn"),
+                w = document.getElementById("myLittleDoge");
+
+            x.innerHTML = '<p>Pink fluffy unicorns dancing on rainbow.</p>';
+            y.style = 'color: white;';
+            // etc
+        }
+        console.log(Date.now() - before);
+    }
+
+    f();
+```
+
+???
+
+- qu'est ce qui ne va pas dans ce slide ?
+
+---
+
+background-image: url(img/gameover.jpg)
+class: bottom right
+
+---
+
+class: middle center
+
+# Leçon 0 : Faire un benchmark en JS
+
+???
+
+- Donner des exemples de choses qui ne sont pas JS (indexeddb,...)
+- Donner des exemples de choses qui sont du pur JS (chaines de caracteres, fonctions)
+- Dire que jsperf porte mal son nom
+
+---
+
+class: middle
+
+```javascript
+    function f() {
+        var before = Date.now();
+        for (var i = 0; i < 1000000; i++) {
+            var x = typeof "str";
+                x = typeof "str";
+                x = typeof "str";
+                x = typeof "str";
+                x = typeof "str";
+                x = typeof "str";
+                x = typeof "str";
+                x = typeof "str";
+                x = typeof "str";
+                x = typeof "str";
+        }
+        console.log(Date.now() - before);
+    }
+
+    f();
+```
+
+???
+
+- qu'est ce qui va se passer
+- les JITs vont intervenir
+    - inference de types
+    - compilation dans differents tiers d'execution
+    - compilation dans IonMonkey
+
+---
+
+class: middle center
+
+# Compilation .italic[à la volée] 101
+
+---
+
+background-image: url(img/alavolette.jpeg)
+
+???
+
+Attention, j'ai bien dit a la volee, pas a la volette.
+
+---
+
+class: middle center
+
+# Global Value Numbering
+
+???
+
+Assigner des identifiants uniques à toutes les valeurs et retrouver des valeurs
+qui pourraient exister en double.
+
+---
+
+class: middle
+
+```javascript
+    function f() {
+        var before = Date.now();
+        for (var i = 0; i < 1000000; i++) {
+            var x = typeof "str";
+                x = typeof "str"; // copie du x précédent
+                x = typeof "str"; // copie du x précédent
+                x = typeof "str"; // etc.
+                x = typeof "str";
+                x = typeof "str";
+                x = typeof "str";
+                x = typeof "str";
+                x = typeof "str";
+                x = typeof "str";
+        }
+        console.log(Date.now() - before);
+    }
+
+    f();
+```
+
+---
+
+class: middle
+
+```javascript
+    function f() {
+        var before = Date.now();
+        for (var i = 0; i < 1000000; i++) {
+            var x = typeof "str";
+        }
+        console.log(Date.now() - before);
+    }
+
+    f();
+```
+
+---
+
+class: middle center
+
+# Constant Folding
+
+---
+
+class: middle
+
+```javascript
+    function f() {
+        var before = Date.now();
+        for (var i = 0; i < 1000000; i++) {
+            var x = "string";
+        }
+        console.log(Date.now() - before);
+    }
+
+    f();
+```
+
+---
+
+class: middle center
+
+# Loop Invariant Code Motion
+
+---
+
+class: middle
+
+```javascript
+    function f() {
+        var before = Date.now();
+        var x = "string"; // HOISTED
+        for (var i = 0; i < 1000000; i++) {
+        }
+        console.log(Date.now() - before);
+    }
+
+    f();
+```
+
+---
+
+class: middle center
+
+# Dead Code Elimination
+
+---
+
+class: middle
+
+```javascript
+    function f() {
+        var before = Date.now();
+        for (var i = 0; i < 1000000; i++) {
+        }
+        console.log(Date.now() - before);
+    }
+
+    f();
+```
+
+---
+
+# Bravo !
+
+Vous venez de chronométrer une boucle vide !
+
+![image](img/congrats.jpg)
+
+---
+
+# Comment rendre ce µ-benchmark obsolète
+
+Inférer et éliminer les boucles vides ?
+
+---
+
+# Essayons de mesurer quelque chose
+
+```javascript
+    function f(arr) {
+        var before = Date.now();
+        var result = ['', '', '', ''];
+        for (var i = 0; i < 1000000; i++) {
+            var j = i % 4;
+            result[j]     = typeof arr[j];
+            result[j + 1] = typeof arr[j + 1];
+            result[j + 2] = typeof arr[j + 2];
+            result[j + 3] = typeof arr[j + 3];
+        }
+        console.log(Date.now() - before);
+        return result;
+    }
+
+    f(['many benchmarks', 'such JS', 'very loopy', 'wow']);
+```
+
+???
+
+- Ne repetez pas les memes operations (copier/coller)
+- Utilisez des variables qui dependent du compteur de boucle (pour eviter LICM
+et constant folding)
+- Utilisez les resultats!
+- Probleme, vous ne mesurez plus seulement ce que vous mesuriez au depart
+
+---
+
+class: middle center
+
+# Conclusion
+
+???
+
+Faire des benchmarks est difficile !
+
+---
+
+class: middle center
+
+# Merci de votre attention
+
+## .link[[@njbenji](https://twitter.com/njbenji)]
+
+    </textarea>
+    <script src="https://gnab.github.io/remark/downloads/remark-latest.min.js">
+    </script>
+    <script>
+      var slideshow = remark.create();
+    </script>
+  </body>
+</html>

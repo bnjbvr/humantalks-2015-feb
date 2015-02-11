@@ -36,8 +36,12 @@ class: center, middle
 
 ???
 
-- expliquer ce qu'est un benchmark
-- benchmarks en JS
+- Un benchmark est un programme court qui permet de tester la performance d'un
+langage / framework / interpréteur, etc.
+- AreWeFastYet vérifie les performances des benchmarks JS dans plusieurs
+navigateurs. Ces benchmarks ont de grosses charges (prennent du temps à
+exécuter), sont censés être réalistes mais représentent plutôt des applications
+web très spécialisées (traitement mathématique, audio, vidéo, etc.).
 
 ---
 
@@ -47,8 +51,8 @@ class: center, middle
 
 ???
 
-- qui je suis (pour qui je travaille)
-- mes opinions sont personnelles
+- Je suis Benjamin Bouvier et travaille pour Mozilla, dans l'équipe qui
+implémente le moteur JS de Firefox, Spidermonkey.
 
 ---
 
@@ -81,7 +85,10 @@ class: middle
 
 ???
 
-- qu'est ce qui ne va pas dans ce slide ?
+- pour faire un benchmark, créer une boucle qui va lancer du code de
+nombreuses fois, et diviser le temps pris par le nombre de tours de boucle pour
+avoir une idée du temps pris par tour de boucle. Lancer au moins 10000 fois.
+- qu'est ce qui ne va pas dans ce benchmark ?
 
 ---
 
@@ -96,9 +103,12 @@ class: middle center
 
 ???
 
-- Donner des exemples de choses qui ne sont pas JS (indexeddb,...)
-- Donner des exemples de choses qui sont du pur JS (chaines de caracteres, fonctions)
-- Dire que jsperf porte mal son nom
+- Ce benchmark teste le DOM (document.getElementById), le layout/rendering
+(innerHTML), le CSS (style), mais pas le JS en soi.
+- exemples de choses qui ne sont pas JS (indexeddb, DOM, CSS, workers...)
+- exemples de choses qui sont du pur JS (chaines de caracteres, fonctions,
+opérations arithmétiques, ES6...)
+- jsperf porte mal son nom
 
 ---
 
@@ -131,7 +141,7 @@ class: middle
 - les JITs vont intervenir
     - inference de types
     - compilation dans differents tiers d'execution
-    - compilation dans IonMonkey
+    - compilation dans IonMonkey (dernier tiers d'exécution)
 
 ---
 
@@ -155,7 +165,8 @@ class: middle center
 
 ???
 
-Assigner des identifiants uniques à toutes les valeurs et retrouver des valeurs
+Phase d'optimisation qui consiste à assigner des identifiants uniques à toutes
+les valeurs (dépendents de leurs entrées) et retrouver des valeurs
 qui pourraient exister en double.
 
 ---
@@ -183,6 +194,11 @@ class: middle
     f();
 ```
 
+???
+
+"str" reçoit un hash unique, typeof "str" aussi du coup => redondances, d'où
+possibilité d'élimination.
+
 ---
 
 class: middle
@@ -199,11 +215,21 @@ class: middle
     f();
 ```
 
+???
+
+La VM vient de supprimer 9 des dix opérations à l'intérieur de la boucle.
+
 ---
 
 class: middle center
 
 # Constant Folding
+
+???
+
+Remplacer les opérations constantes par leur résultat direct (remplacer 1 + 1
+par 2, par exemple). Tout ce qui n'est pas fait à l'exécution est du temps
+gagné, donc autant le faire à la compilation, si c'est possible.
 
 ---
 
@@ -221,11 +247,20 @@ class: middle
     f();
 ```
 
+???
+
+typeof "str" == "string" dans tous les cas, on peut donc le remplacer ici.
+
 ---
 
 class: middle center
 
 # Loop Invariant Code Motion
+
+???
+
+A l'intérieur d'une boucle, ce qui ne dépend pas de la boucle peut être calculé
+une fois avant la boucle, plutôt qu'à chaque tour de boucle ("hoisting").
 
 ---
 
@@ -243,11 +278,20 @@ class: middle
     f();
 ```
 
+???
+
+Ici, var x = "string" peut être calculé une seule fois, en dehors de la boucle.
+
 ---
 
 class: middle center
 
 # Dead Code Elimination
+
+???
+
+Le code qui n'est pas utilisé, et qui même enlevé, n'est pas remarqué, peut
+être tout simplement supprimé (code "mort").
 
 ---
 
@@ -264,6 +308,10 @@ class: middle
     f();
 ```
 
+???
+
+var x = "string" n'est pas utilisé, on peut donc l'enlever.
+
 ---
 
 # Bravo !
@@ -277,6 +325,10 @@ Vous venez de chronométrer une boucle vide !
 # Comment rendre ce µ-benchmark obsolète
 
 Inférer et éliminer les boucles vides ?
+
+???
+
+Certaines VMs sont déjà capables d'éliminer les boucles vides.
 
 ---
 
@@ -306,7 +358,8 @@ Inférer et éliminer les boucles vides ?
 - Utilisez des variables qui dependent du compteur de boucle (pour eviter LICM
 et constant folding)
 - Utilisez les resultats!
-- Probleme, vous ne mesurez plus seulement ce que vous mesuriez au depart
+- Probleme, vous ne mesurez plus seulement ce que vous mesuriez au depart (ici
+on mesure aussi le temps que prennent un load/store dans un tableau).
 
 ---
 
@@ -325,6 +378,14 @@ class: middle center
 # Merci de votre attention
 
 ## .link[[@njbenji](https://twitter.com/njbenji)]
+
+???
+
+Si vous trouvez des cas où Firefox est considérablement plus lent que Chrome ou
+Safari ou Internet Explorer sur un micro benchmark JS, merci de nous le
+signaler (via par twitter directement vers moi @njbenji, en FR ou en EN), soit
+sur le site https://bugzilla.mozilla.org, ouvrir un nouveau bug (en anglais)
+dans le Component Core / JavaScript Engine.
 
     </textarea>
     <script src="https://gnab.github.io/remark/downloads/remark-latest.min.js">
